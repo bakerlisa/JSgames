@@ -1,0 +1,288 @@
+<html>
+<body>
+    <div id="world">
+        <div id="character" data-column="" data-row=""></div>
+        <div id="ghost" data-column="" data-row=""></div>
+        <div class="score"></div>        
+        <div class="lives" data-lives="0">3</div>
+    </div>  
+    <div class="message"></div>
+
+    <style>
+        *{margin: 0;padding: 0;}
+
+        #world{position: relative; display: inline-block;}
+        .wall{background-color: #f3c4a3; width: 40px; height: 40px; display: inline-block;}
+        .sushi{background-color: #9ea967;  width: 40px; height: 40px; background-size: contain; background-image: url('img/sushi.png'); display: inline-block;}
+        .onigiri{background-color: #9ea967;  width: 40px; height: 40px; background-size: contain; background-image: url('img/onigiri.png'); display: inline-block;}
+        .blank{background-color: #9ea967;  width: 40px; height: 40px; display: inline-block;}
+
+        /*ninja*/
+        #character{height: 40px; width: 40px;background-size: contain;  background-image: url('img/ninja.gif');background-color: #9ea967; position: absolute; z-index: 10;}
+
+        /*ghost*/
+        #ghost{height: 40px; width: 40px;background-size: contain;  background-image: url('img/pumpky.gif');background-color: #9ea967; position: absolute; }
+
+        /*score*/
+        .score{position: absolute; top: 0;left: 0; color: #e96217; padding: 10px; }
+
+        /*message*/
+        .message{position: absolute; font-size: 35px; color: #000; top: 250; left: 100px; z-index: 100;}
+        .message p{font-size: 20px; text-align: center;}
+
+        /*lives*/
+        .lives{position: absolute; top: 5px; left: 375px; color: black;}
+    </style>  
+
+    <script type="text/javascript">
+        function randomIntFromInterval(min, max) { // min and max included 
+          return Math.floor(Math.random() * (max - min + 1) + min)
+        }
+        
+        function createGridBox(name,parent,iterator,row){    
+            var elementChild = document.createElement('div');
+            elementChild.classList.add(name);
+            
+            // creating row
+            if(name == "row"){// this create overall rows that children go inside of
+                var parentElement = document.getElementById(parent);
+                parentElement.appendChild(elementChild);
+            }else{ // this creates elements inside of a parent, ona certain iterator (that way the right elements are going into the right parent)
+
+                elementChild.dataset.column = iterator;
+                elementChild.dataset.row = row;
+
+                var parentElement = document.getElementsByClassName(parent);
+
+                parentElement[row].appendChild(elementChild);
+            } 
+        }
+
+        // Creates the Grid
+        var gridElements = [
+            "wall",
+            "blank",
+            "onigiri",
+            "blank",
+            "sushi",
+            "blank",
+        ];
+
+        var grid = [];
+
+        // gets a random number from 0, 100 and creates that many rows inside our world
+        var gridRows = randomIntFromInterval(5,25);
+        
+
+        // go through each of those array rows and we crete what each box will be
+        for(l=0;l<gridRows;l++){
+            createGridBox("row","world");
+            grid.push(new Array());
+
+            for(m=0;m<10;m++){
+                let randomeElement = randomIntFromInterval(0,5); 
+                grid[l].push(gridElements[randomeElement]);
+            }
+        }
+
+        // creates the div elements
+        for(q=0;q<grid.length;q++){
+            for (n=0;n<10;n++){
+                if(n == 0 || q == 0 || n == 9 || q ==  (gridRows - 1)){
+                    createGridBox("wall","row",[n],[q]);
+                }else{
+                    createGridBox(grid[q][n],"row",[n],[q]);
+                }
+            }
+        }
+
+        // update function
+        function update(element,elementLeft,elementTop,column,row){
+            document.getElementById(element).style.left = elementLeft+"px";
+            document.getElementById(element).style.top = elementTop+"px";
+        }
+
+        // ninja movement
+        var leftValue = 0, topValue = 0, direction = "down", column = 1, row = 1,score = 0,totalsushi = document.querySelectorAll('.sushi').length, totalonigiri = document.querySelectorAll('.onigiri').length,windowWidth = document.querySelector('#world').offsetWidth - 40, windowHeight = document.querySelector('#world').offsetHeight - 40;
+
+        // ghost momvement
+        var ghostLeft = 0, ghostTop = 0, ghostDir = "down", ghostColumn = 6, ghostRow = 6;
+
+        function generateIconPlacement(character,placement){
+            var such = document.getElementsByClassName('blank');
+
+            var initialTop = such[placement].dataset.column;
+            var initialleft = such[placement].dataset.row;
+
+            if(character == 'ghost'){
+                ghostLeft = document.getElementById(character).style.left = initialleft * 40;
+                ghostTop = document.getElementById(character).style.top = initialTop * 40;
+                
+                document.getElementById(character).dataset.column = initialleft;
+                document.getElementById(character).dataset.row =  initialTop;
+                    ghostColumn = parseInt(initialleft);
+                    ghostRow = parseInt(initialTop);
+                update(character,ghostLeft,ghostTop);
+            }else{
+                leftValue = document.getElementById(character).style.left = initialleft * 40;
+                topValue = document.getElementById(character).style.top = initialTop * 40;
+                
+                document.getElementById(character).dataset.column = initialleft;
+                document.getElementById(character).dataset.row =  initialTop;
+                    column = parseInt(initialleft);
+                    row = parseInt( initialTop);
+                update(character,leftValue,topValue);
+            }
+
+        }
+
+        // place ninjaman & ghost
+        generateIconPlacement('character',0); 
+        generateIconPlacement('ghost',5);
+
+        document.onkeydown = function(e){
+            var oldRow = document.getElementById("character").dataset.row; 
+            var oldColumn =  document.getElementById("character").dataset.column; 
+            var oldTop = document.getElementById("character").style.top;
+            var oldLeft = document.getElementById("character").style.left;
+
+            if(e.keyCode == 37 && leftValue - 40 >= 0) { // LEFT     
+                leftValue = leftValue - 40;
+                column--;   
+            }
+
+            else if (e.keyCode == 39 && leftValue + 40 <= windowWidth) { // RIGHT  
+               leftValue = leftValue + 40;    
+               column++;     
+            }
+
+            else if (e.keyCode == 40 && topValue + 40 <= windowHeight) { // DOWN
+                topValue = topValue + 40;  
+                row++;
+            }
+
+            else if (e.keyCode == 38 && topValue - 40 >= 0) { // UP
+                topValue = topValue - 40;
+                row--;
+            }
+
+
+            //resets the values so we can project where he's going to be and if we need to update it
+            if(moving(column,row) == "old"){
+                column = parseInt(oldColumn);
+                row = parseInt(oldRow);
+                leftValue = parseInt(oldLeft);
+                topValue = parseInt(oldTop);
+            }
+            update('character',leftValue,topValue);
+        }
+
+        function ghostDirection(letterPressed){
+            var oldGhostRow = parseInt(document.getElementById("ghost").dataset.row); 
+            var oldGhostColumn =  parseInt(document.getElementById("ghost").dataset.column); 
+            var oldGhostTop = parseInt(document.getElementById("ghost").style.top);
+            var oldGhostLeft = parseInt(document.getElementById("ghost").style.left);
+
+            if(letterPressed == 'left' && ghostLeft - 40 >= 0) { // LEFT     
+                ghostLeft = ghostLeft - 40;
+                ghostColumn--; 
+            }
+
+            else if (letterPressed == 'right' && ghostLeft + 40 <= windowWidth) { // RIGHT  
+               ghostLeft = ghostLeft + 40;    
+               ghostColumn++;       
+            }
+
+            else if (letterPressed == 'down' && ghostTop + 40 <= windowHeight) { // DOWN
+                ghostTop = ghostTop + 40;  
+                ghostRow++;
+            }
+
+            else if (letterPressed == 'up' && ghostTop - 40 >= 0) { // UP
+                ghostTop = ghostTop - 40;
+                ghostRow--; 
+            }
+
+            let ghostGrid = document.querySelector('.row [data-column="'+ghostColumn+'"][data-row="'+ghostRow+'"]');
+
+            //resets the values so we can project where he's going to be and if we need to update it
+            if(ghostGrid.classList.contains('wall')){
+                ghostRow = oldGhostRow;
+                ghostColumn = oldGhostColumn;
+                ghostTop = oldGhostTop;
+                ghostLeft = oldGhostLeft; 
+            }
+
+            document.getElementById("ghost").dataset.column = ghostColumn;
+            document.getElementById("ghost").dataset.row = ghostRow;
+
+            update('ghost',ghostLeft,ghostTop);
+        }
+
+        function moving(column,row){
+            let grid = document.querySelector('.row [data-column="'+column+'"][data-row="'+row+'"]');   
+ 
+            let ghostGridColumn = document.querySelector('.row [data-column="'+ghostColumn+'"][data-row="'+ghostRow+'"]').dataset.column;
+            let ghostGridRow = document.querySelector('.row [data-column="'+ghostColumn+'"][data-row="'+ghostRow+'"]').dataset.row;
+
+            if(ghostGridColumn == column && ghostGridRow == row){
+                // ghost and ninja in same square
+                var lives = parseInt(document.querySelector('.lives').innerHTML);
+                if(lives == 0){
+                    document.querySelector('.message').innerHTML = "Game Over <p>Score "+score+"</p>";
+                    document.querySelector('.score').innerHTML = '';
+                }else{
+                    lives--;
+                    document.querySelector('.lives').innerHTML = lives;
+                    document.querySelector('.message').innerHTML = "Lost a life. <p>Lives remaining "+lives+"</p>";
+                    setTimeout(function(){
+                        document.querySelector('.message').innerHTML = '';
+                    },2000);
+
+                }
+            }else if(grid.classList.contains('sushi')){
+                score += 10;
+                ateItem(grid,'sushi'); 
+            } 
+            if(grid.classList.contains('onigiri')){
+                score += 5;
+                ateItem(grid,'onigiri'); 
+            } 
+
+            if(!grid.classList.contains('wall')){
+                document.getElementById("character").dataset.column = column;
+                document.getElementById("character").dataset.row = row; 
+            }else{
+                return 'old';
+            }
+        }
+
+        function ateItem(grid,item){
+            var itmeName = parseInt('total' + item);
+            document.querySelector('.score').innerHTML = score;
+            grid.classList.remove(item);
+            grid.classList.add('blank');
+
+            if(item == "sushi"){
+               totalsushi--; 
+            }else if(item ==  "onigiri"){
+               totalonigiri--; 
+            }
+
+            if(totalsushi == 0 && totalonigiri == 0){
+                document.querySelector('.message').innerHTML = "You Won! <p>Score "+score+"</p>";
+                document.querySelector('.score').innerHTML = '';
+            } 
+        }
+
+        // GHOST
+        (function(){
+            var keys = ['up','down','left','right'];
+            setInterval(function(){
+                var randomKey = randomIntFromInterval(0,3);
+                ghostDirection(keys[randomKey]);
+            },250);
+        }());
+    </script>
+</body>
+</html>
